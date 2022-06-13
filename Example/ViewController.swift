@@ -19,7 +19,7 @@ class ViewController: UIViewController {
     /// The Label
     lazy var label: UILabel = {
         let label = UILabel()
-        label.text = "🚀\nUniversalMailComposer\nExample"
+        label.text = "🚀Open Mail"
         label.font = .systemFont(ofSize: 25, weight: .semibold)
         label.numberOfLines = 0
         label.lineBreakMode = .byWordWrapping
@@ -33,6 +33,15 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .white
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(tapFunction))
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(tap)
+    }
+    
+    @objc
+    func tapFunction(sender: UITapGestureRecognizer) {
+        UniversalMailComposer.shared.sendMail(recipient: "feedback@beatcode.it", subject: "sono un soggetto", body: "sono un body", hostVC: self)
     }
     
     /// LoadView
