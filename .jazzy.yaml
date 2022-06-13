@@ -1,0 +1,7 @@
+# UniversalMailComposer document generator jazzy settings
+
+copyright: Copyright 2022 Beatcode
+author: Giada Ciotola
+xcodebuild_arguments: [-target, UniversalMailComposer-iOS]
+clean: true
+output: ./Documentation
