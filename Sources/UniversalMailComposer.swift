@@ -30,7 +30,9 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
             
             /// Show third party email composer if default Mail app is not present
         } else if let fallbackURLs = fallbackClients(to: recipient, subject: subject, body: body) {
-            UIApplication.shared.open(fallbackURLs)
+            if #available(iOS 10.0, *) {
+                UIApplication.shared.open(fallbackURLs)
+            }
         }
     }
     
