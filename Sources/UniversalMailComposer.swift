@@ -17,6 +17,9 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         recipient: String,
         subject: String,
         body: String,
+        attachmentData: Data,
+        mimeType: String,
+        attachmentName: String,
         hostVC: UIViewController
     ) {
         if MFMailComposeViewController.canSendMail() {
@@ -25,7 +28,7 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
             mail.setToRecipients([recipient])
             mail.setSubject(subject)
             mail.setMessageBody(body, isHTML: false)
-            
+            mail.addAttachmentData(attachmentData, mimeType: mimeType, fileName: attachmentName)
             hostVC.present(mail, animated: true)
             
             /// Show third party email composer if default Mail app is not present
@@ -36,7 +39,7 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         }
     }
     
-    func fallbackClients(to: String, subject: String, body: String) -> URL? {
+    func fallbackClients(to: String, subject: String, body: String, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
         guard let subjectEncoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), let bodyEncoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return URL(string: "") }
         
         let gmailURL = URL(string: "googlegmail://co?to=\(to)&subject=\(subjectEncoded)&body=\(bodyEncoded)")
