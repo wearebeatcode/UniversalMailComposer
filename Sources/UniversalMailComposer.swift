@@ -5,9 +5,10 @@
 //  Created by Giada Ciotola on 13 Jun 2022.
 //  Copyright © 2022 Beatcode. All rights reserved.
 //
+//swiftlint:disable large_tuple identifier_name line_length
 
-import UIKit
 import MessageUI
+import UIKit
 
 open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate {
     public static let shared = UniversalMailComposer()
@@ -15,20 +16,24 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
     
     open func sendMail(
         recipient: String,
-        subject: String,
-        body: String,
-        attachmentData: Data,
-        mimeType: String,
-        attachmentName: String,
+        subject: String?,
+        body: String?,
+        attachment: (data: Data, mimeType: String, name: String)?,
         hostVC: UIViewController
     ) {
         if MFMailComposeViewController.canSendMail() {
             let mail = MFMailComposeViewController()
             mail.mailComposeDelegate = self
             mail.setToRecipients([recipient])
-            mail.setSubject(subject)
-            mail.setMessageBody(body, isHTML: false)
-            mail.addAttachmentData(attachmentData, mimeType: mimeType, fileName: attachmentName)
+            if let subject {
+                mail.setSubject(subject)
+            }
+            if let body {
+                mail.setMessageBody(body, isHTML: false)
+            }
+            if let attachment {
+                mail.addAttachmentData(attachment.data, mimeType: attachment.mimeType, fileName: attachment.name)
+            }
             hostVC.present(mail, animated: true)
             
             /// Show third party email composer if default Mail app is not present
@@ -39,30 +44,42 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         }
     }
     
-    func fallbackClients(to: String, subject: String, body: String, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
-        guard let subjectEncoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), let bodyEncoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return URL(string: "") }
+    func fallbackClients(to: String, subject: String?, body: String?, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
         
-        let gmailURL = URL(string: "googlegmail://co?to=\(to)&subject=\(subjectEncoded)&body=\(bodyEncoded)")
-        let outlookURL = URL(string: "ms-outlook://compose?to=\(to)&subject=\(subjectEncoded)")
-        let yahooURL = URL(string: "ymail://mail/compose?to=\(to)&subject=\(subjectEncoded)&body=\(bodyEncoded)")
-        let sparkURL = URL(string: "readdle-spark://compose?recipient=\(to)&subject=\(subjectEncoded)&body=\(bodyEncoded)")
-        let defaultURL = URL(string: "mailto:\(to)?subject=\(subjectEncoded)&body=\(bodyEncoded)")
+        var gmailURLString = "googlegmail://co?to=\(to)"
+        var outlookURLString = "ms-outlook://compose?to=\(to)"
+        var yahooURLString = "ymail://mail/compose?to=\(to)"
+        var sparkURLString = "readdle-spark://compose?recipient=\(to)"
+        var defaultURLString = "mailto:\(to)"
         
-        if let gmailURL = gmailURL, UIApplication.shared.canOpenURL(gmailURL) {
+        if let subjectEncoded = subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            gmailURLString.append("&subject=\(subjectEncoded)")
+            outlookURLString.append("&subject=\(subjectEncoded)")
+            yahooURLString.append("&subject=\(subjectEncoded)")
+            sparkURLString.append("&subject=\(subjectEncoded)")
+            defaultURLString.append("&subject=\(subjectEncoded)")
+        }
+        if let bodyEncoded = body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            gmailURLString.append("&body=\(bodyEncoded)")
+            yahooURLString.append("&body=\(bodyEncoded)")
+            sparkURLString.append("&body=\(bodyEncoded)")
+            defaultURLString.append("&body=\(bodyEncoded)")
+        }
+        
+        if let gmailURL = URL(string: gmailURLString), UIApplication.shared.canOpenURL(gmailURL) {
             return gmailURL
-        } else if let outlookURL = outlookURL, UIApplication.shared.canOpenURL(outlookURL) {
+        } else if let outlookURL = URL(string: outlookURLString), UIApplication.shared.canOpenURL(outlookURL) {
             return outlookURL
-        } else if let yahooURL = yahooURL, UIApplication.shared.canOpenURL(yahooURL) {
+        } else if let yahooURL = URL(string: yahooURLString), UIApplication.shared.canOpenURL(yahooURL) {
             return yahooURL
-        } else if let sparkURL = sparkURL, UIApplication.shared.canOpenURL(sparkURL) {
+        } else if let sparkURL = URL(string: sparkURLString), UIApplication.shared.canOpenURL(sparkURL) {
             return sparkURL
         }
         
-        return defaultURL
+        return URL(string: defaultURLString)
     }
     
     public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
         controller.dismiss(animated: true)
     }
 }
-
