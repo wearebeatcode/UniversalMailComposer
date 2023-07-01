@@ -15,7 +15,7 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
     public override init() {}
     
     open func sendMail(
-        recipient: String,
+        recipient: String?,
         subject: String?,
         body: String?,
         attachment: (data: Data, mimeType: String, name: String)?,
@@ -24,7 +24,9 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         if MFMailComposeViewController.canSendMail() {
             let mail = MFMailComposeViewController()
             mail.mailComposeDelegate = self
-            mail.setToRecipients([recipient])
+            if let recipient {
+                mail.setToRecipients([recipient])
+            }
             if let subject {
                 mail.setSubject(subject)
             }
@@ -44,39 +46,58 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         }
     }
     
-    func fallbackClients(to: String, subject: String?, body: String?, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
+    func fallbackClients(to: String?, subject: String?, body: String?, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
         
-        var gmailURLString = "googlegmail://co?to=\(to)"
-        var outlookURLString = "ms-outlook://compose?to=\(to)"
-        var yahooURLString = "ymail://mail/compose?to=\(to)"
-        var sparkURLString = "readdle-spark://compose?recipient=\(to)"
-        var defaultURLString = "mailto:\(to)"
+        var gmailComponents = URLComponents(string: "googlegmail://co")
+        gmailComponents?.queryItems = []
+        
+        var outlookURLComponents = URLComponents(string: "ms-outlook://compose")
+        outlookURLComponents?.queryItems = []
+        
+        var yahooURLComponents = URLComponents(string: "ymail://mail/compose")
+        yahooURLComponents?.queryItems = []
+        
+        var sparkURLComponents = URLComponents(string: "readdle-spark://compose")
+        sparkURLComponents?.queryItems = []
+        
+        var defaultURLComponents = URLComponents(string: "mailto:")
+        defaultURLComponents?.queryItems = []
+        
+        if let to {
+            gmailComponents?.queryItems?.append(URLQueryItem(name: "to", value: to))
+            outlookURLComponents?.queryItems?.append(URLQueryItem(name: "to", value: to))
+            yahooURLComponents?.queryItems?.append(URLQueryItem(name: "to", value: to))
+            sparkURLComponents?.queryItems?.append(URLQueryItem(name: "recipient", value: to))
+            defaultURLComponents?.path = to
+        }
         
         if let subjectEncoded = subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-            gmailURLString.append("&subject=\(subjectEncoded)")
-            outlookURLString.append("&subject=\(subjectEncoded)")
-            yahooURLString.append("&subject=\(subjectEncoded)")
-            sparkURLString.append("&subject=\(subjectEncoded)")
-            defaultURLString.append("&subject=\(subjectEncoded)")
+            let subjectItem = URLQueryItem(name: "subject", value: subjectEncoded)
+            gmailComponents?.queryItems?.append(subjectItem)
+            outlookURLComponents?.queryItems?.append(subjectItem)
+            yahooURLComponents?.queryItems?.append(subjectItem)
+            sparkURLComponents?.queryItems?.append(subjectItem)
+            defaultURLComponents?.queryItems?.append(subjectItem)
         }
         if let bodyEncoded = body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-            gmailURLString.append("&body=\(bodyEncoded)")
-            yahooURLString.append("&body=\(bodyEncoded)")
-            sparkURLString.append("&body=\(bodyEncoded)")
-            defaultURLString.append("&body=\(bodyEncoded)")
+            let bodyItem = URLQueryItem(name: "body", value: bodyEncoded)
+            gmailComponents?.queryItems?.append(bodyItem)
+            yahooURLComponents?.queryItems?.append(bodyItem)
+            sparkURLComponents?.queryItems?.append(bodyItem)
+            defaultURLComponents?.queryItems?.append(bodyItem)
         }
         
-        if let gmailURL = URL(string: gmailURLString), UIApplication.shared.canOpenURL(gmailURL) {
+        if let gmailURL = gmailComponents?.url, UIApplication.shared.canOpenURL(gmailURL) {
             return gmailURL
-        } else if let outlookURL = URL(string: outlookURLString), UIApplication.shared.canOpenURL(outlookURL) {
+        } else if let outlookURL = outlookURLComponents?.url, UIApplication.shared.canOpenURL(outlookURL) {
             return outlookURL
-        } else if let yahooURL = URL(string: yahooURLString), UIApplication.shared.canOpenURL(yahooURL) {
+        } else if let yahooURL = yahooURLComponents?.url, UIApplication.shared.canOpenURL(yahooURL) {
             return yahooURL
-        } else if let sparkURL = URL(string: sparkURLString), UIApplication.shared.canOpenURL(sparkURL) {
+        } else if let sparkURL = sparkURLComponents?.url, UIApplication.shared.canOpenURL(sparkURL) {
             return sparkURL
         }
         
-        return URL(string: defaultURLString)
+        return defaultURLComponents?.url
     }
     
     public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
