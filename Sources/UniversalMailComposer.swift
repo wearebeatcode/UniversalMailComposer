@@ -5,7 +5,7 @@
 //  Created by Giada Ciotola on 13 Jun 2022.
 //  Copyright © 2022 Beatcode. All rights reserved.
 //
-//swiftlint:disable large_tuple identifier_name line_length
+//swiftlint:disable large_tuple line_length
 
 import MessageUI
 import UIKit
