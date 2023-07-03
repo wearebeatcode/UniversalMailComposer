@@ -5,10 +5,21 @@
 //  Created by Giada Ciotola on 13 Jun 2022.
 //  Copyright © 2022 Beatcode. All rights reserved.
 //
-//swiftlint:disable large_tuple line_length
 
 import MessageUI
 import UIKit
+
+public struct UniversalMailAttachment {
+    let data: Data
+    let mimeType: String
+    let name: String
+    
+    public init(data: Data, mimeType: String, name: String) {
+        self.data = data
+        self.mimeType = mimeType
+        self.name = name
+    }
+}
 
 open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate {
     public static let shared = UniversalMailComposer()
@@ -18,7 +29,7 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         recipient: String?,
         subject: String?,
         body: String?,
-        attachment: (data: Data, mimeType: String, name: String)?,
+        attachment: UniversalMailAttachment?,
         hostVC: UIViewController
     ) {
         if MFMailComposeViewController.canSendMail() {
@@ -46,35 +57,45 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         }
     }
     
-    func fallbackClients(to recipient: String?, subject: String?, body: String?, attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
+    func fallbackClients(to recipient: String?, subject: String?, body: String?,
+                         attachmentData: Data? = nil, mimeType: String? = nil, attachmentName: String? = nil) -> URL? {
         
         let gmailComponents = urlComponents(from: "googlegmail://co", parameters: [
-            (recipient, "to", false),
-            (subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "subject", false),
-            (body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "body", false)
+            ComponentsParameter(value: recipient, key: "to", isQueryItem: false),
+            ComponentsParameter(value: subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "subject", isQueryItem: false),
+            ComponentsParameter(value: body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "body", isQueryItem: false)
         ])
         
         let outlookURLComponents = urlComponents(from: "ms-outlook://compose", parameters: [
-            (recipient, "to", false),
-            (subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "subject", false)
+            ComponentsParameter(value: recipient, key: "to", isQueryItem: false),
+            ComponentsParameter(value: subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "subject", isQueryItem: false)
         ])
         
         let yahooURLComponents = urlComponents(from: "ymail://mail/compose", parameters: [
-            (recipient, "to", false),
-            (subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "subject", false),
-            (body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "body", false)
+            ComponentsParameter(value: recipient, key: "to", isQueryItem: false),
+            ComponentsParameter(value: subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "subject", isQueryItem: false),
+            ComponentsParameter(value: body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "body", isQueryItem: false)
         ])
         
         let sparkURLComponents = urlComponents(from: "readdle-spark://compose", parameters: [
-            (recipient, "recipient", false),
-            (subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "subject", false),
-            (body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "body", false)
+            ComponentsParameter(value: recipient, key: "recipient", isQueryItem: false),
+            ComponentsParameter(value: subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "subject", isQueryItem: false),
+            ComponentsParameter(value: body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "body", isQueryItem: false)
         ])
         
         let defaultURLComponents = urlComponents(from: "mailto:", parameters: [
-            (recipient, "to", true),
-            (subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "subject", false),
-            (body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), "body", false)
+            ComponentsParameter(value: recipient, key: "to", isQueryItem: true),
+            ComponentsParameter(value: subject?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "subject", isQueryItem: false),
+            ComponentsParameter(value: body?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                key: "body", isQueryItem: false)
         ])
         
         if let gmailURL = openableUrl(from: gmailComponents) {
@@ -90,7 +111,13 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         return defaultURLComponents?.url
     }
     
-    private func urlComponents(from string: String, parameters: [(value: String?, key: String, isQueryItem: Bool)]) -> URLComponents? {
+    private struct ComponentsParameter {
+        let value: String?
+        let key: String
+        let isQueryItem: Bool
+    }
+    
+    private func urlComponents(from string: String, parameters: [ComponentsParameter]) -> URLComponents? {
         var components = URLComponents(string: string)
         components?.queryItems = []
         parameters.forEach { parameter in
@@ -114,7 +141,8 @@ open class UniversalMailComposer: NSObject, MFMailComposeViewControllerDelegate 
         return url
     }
     
-    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+    public func mailComposeController(_ controller: MFMailComposeViewController,
+                                      didFinishWith result: MFMailComposeResult, error: Error?) {
         controller.dismiss(animated: true)
     }
 }
