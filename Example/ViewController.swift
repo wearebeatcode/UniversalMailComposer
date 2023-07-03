@@ -41,7 +41,7 @@ class ViewController: UIViewController {
     
     @objc
     func tapFunction(sender: UITapGestureRecognizer) {
-        UniversalMailComposer.shared.sendMail(recipient: "feedback@beatcode.it", subject: "sono un soggetto", body: "sono un body", attachmentData: Data(), mimeType: "", attachmentName: "", hostVC: self)
+        UniversalMailComposer.shared.sendMail(recipient: "feedback@beatcode.it", subject: "sono un soggetto", body: "sono un body", attachment: (data: Data(), mimeType: "", name: ""), hostVC: self)
     }
     
     /// LoadView
